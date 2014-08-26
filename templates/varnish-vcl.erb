@@ -48,7 +48,7 @@ backend <%= backend['name'] -%> {
 # set directors
 #
 <% @directors.each do |director| -%>
-director <%= director['name'] -%> round-robin {
+director <%= director['name'] -%> <%= (director['method'] || 'round-robin') -%> {
   <%- director['backends'].each do |backend| -%>
   { .backend = <%= backend -%>; }
   <%- end -%>
