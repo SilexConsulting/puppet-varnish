@@ -70,8 +70,7 @@ acl <%= acl['name'] -%> {
 sub vcl_recv {
   if (req.restarts == 0) {
     if (req.http.x-forwarded-for) {
-      set req.http.X-Forwarded-For =
-      req.http.X-Forwarded-For + ", " + client.ip;
+      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
     } else {
       set req.http.X-Forwarded-For = client.ip;
     }
@@ -96,7 +95,15 @@ sub vcl_recv {
     <%- end -%>
   <%- end -%>
 <%- end -%>
-  
+
+  <%- if (@grace) -%>
+  set req.grace = <%= @grace -%>h;
+  <%- end -%>
+  if (!req.backend.healthy)
+  {
+    unset req.http.Cookie;
+  }
+
   if (req.request != "GET" &&
       req.request != "HEAD" &&
       req.request != "PUT" &&
@@ -111,8 +118,35 @@ sub vcl_recv {
     /* We only deal with GET and HEAD by default */
     return (pass);
   }
+
+
+  <%- if ( @uncacheable_paths )  -%>
+      <%- if (@uncacheable_paths.size == 1)  -%>
+        if ( req.url ~ "<%= @uncacheable_paths[0] -%>") {
+      <%- else -%>
+        if ( <%=  @uncacheable_paths.map! { |k| "req.url ~ \"#{k}\"" }.join(" ||\n") -%> )
+      <%- end -%>
+      {
+        return (pass);
+      }
+  <%- end -%>
+
+  if (req.http.Cookie)
+  {
+    set req.http.Cookie = ";" + req.http.Cookie;
+    <%- if @remove_cookies -%>
+        <%- @remove_cookies.each do |cookie| -%>
+        set req.http.Cookie = regsuball(req.http.Cookie, "<%= cookie['find'] -%>", "<%= cookie['replace'] -%>");
+        <%- end -%>
+    <%- end -%>
+  }
+  if (req.http.Cookie == "")
+  {
+    unset req.http.Cookie;
+  }
+
   if (req.http.Authorization || req.http.Cookie) {
-    /* Not cacheable by default */
+    /* Not cacheable */
     return (pass);
   }
   return (lookup);
@@ -163,10 +197,18 @@ sub vcl_recv {
 #     return (deliver);
 # }
 # 
-# sub vcl_deliver {
-#     return (deliver);
-# }
-# 
+# Set a header to track a cache HIT/MISS.
+sub vcl_deliver
+{
+    if (obj.hits > 0)
+    {
+        set resp.http.X-Varnish-Cache = "HIT";
+    }
+    else
+    {
+        set resp.http.X-Varnish-Cache = "MISS";
+    }
+}#
 # sub vcl_error {
 #     set obj.http.Content-Type = "text/html; charset=utf-8";
 #     set obj.http.Retry-After = "5";

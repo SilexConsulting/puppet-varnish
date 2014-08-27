@@ -18,7 +18,7 @@
 #
 
 class varnish::install (
-  $version = present,
+  $version = "3.0",
 ) {
 
   # varnish package

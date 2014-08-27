@@ -106,6 +106,9 @@ class varnish::vcl (
   $selectors  = [],
   $conditions = [],
   $template   = undef,
+  $uncacheable_paths = [],
+  $grace  = undef,
+  $remove_cookies = [],
 ) {
 
   include varnish

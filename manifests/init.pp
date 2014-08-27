@@ -76,6 +76,8 @@ class varnish (
   include varnish::params
 
   # install Varnish
+  class {'varnish::repo':
+  } ->
   class {'varnish::install':
     version => $version,
   }
