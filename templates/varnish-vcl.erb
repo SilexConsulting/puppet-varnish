@@ -48,7 +48,7 @@ backend <%= backend['name'] -%> {
 # set directors
 #
 <% @directors.each do |director| -%>
-director <%= director['name'] -%> round-robin {
+director <%= director['name'] -%> <%= (director['method'] || 'round-robin') -%> {
   <%- director['backends'].each do |backend| -%>
   { .backend = <%= backend -%>; }
   <%- end -%>
@@ -79,13 +79,13 @@ sub vcl_recv {
   # backend selection
   #
 <%- if @selectors.size == 1 -%>  
-  set req.backend = <%= selectors[0]['backend'] -%>;
+  set req.backend = <%= @selectors[0]['backend'] -%>;
 <%- else -%>
   <%- @selectors.each do |selector| -%>
-    <%- if selectors[0] == selector -%>
+    <%- if @selectors[0] == selector -%>
   if (<%= selector['condition'] -%>) {
     set req.backend = <%= selector['backend'] -%>;
-    <%- elsif selectors[-1] == selector -%>
+    <%- elsif @selectors[-1] == selector -%>
   } else {
     set req.backend = <%= selector['backend'] -%>;
   }
