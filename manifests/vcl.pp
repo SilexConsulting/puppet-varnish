@@ -106,7 +106,7 @@ class varnish::vcl (
   $selectors  = [],
   $conditions = [],
   $template   = undef,
-  $uncacheable_paths = [],
+  $uncacheable_paths = undef,
   $grace  = undef,
   $remove_cookies = [],
 ) {
